@@ -42,7 +42,7 @@ public class Specialist {
     private List<Treatment> treatments = new ArrayList<>();
 
     protected Specialist() {
-        // requerido por JPA
+
     }
 
     public Specialist(String professionalCode, String firstName, String lastName, String email, boolean active) {

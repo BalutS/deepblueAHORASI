@@ -45,7 +45,7 @@ public class Animal {
     private List<Treatment> treatments = new ArrayList<>();
 
     protected Animal() {
-        // requerido por JPA
+
     }
 
     public Animal(String animalCode, String commonName, String scientificName, AnimalSex sex) {

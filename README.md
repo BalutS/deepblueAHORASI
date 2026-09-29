@@ -1,7 +1,7 @@
-# DeepBlue Rescue — Capa de Persistencia
+# DeepBlue Rescue — Capas de Persistencia y Servicio
 
 ## 1. Nombre del proyecto
-**DeepBlue Rescue** (`deepblue-rescue`)
+DeepBlue Rescue
 
 ## 2. Descripción breve
 DeepBlue Rescue es una plataforma para organizaciones dedicadas al rescate y rehabilitación de fauna marina. Este proyecto implementa de manera robusta y completa la capa de persistencia utilizando Java 21, Spring Boot 4, Spring Data JPA, Hibernate ORM, Flyway y PostgreSQL ejecutado en contenedores mediante Testcontainers.
@@ -27,22 +27,20 @@ El modelo relacional está compuesto por 8 tablas diseñadas en PostgreSQL:
 
 ## 5. Instrucciones para ejecutar
 Para empaquetar el proyecto:
-```bash
+
 cd deepblue-rescue
 mvn clean package -DskipTests
-```
+
 
 Para levantar la aplicación localmente apuntando a un PostgreSQL existente (asegurarse de tener las variables de entorno configuradas o usar los defaults):
-```bash
 mvn spring-boot:run
-```
+
 
 ## 6. Instrucciones para ejecutar tests
 Para ejecutar la suite completa de pruebas de integración contra PostgreSQL real vía Testcontainers:
-```bash
 cd deepblue-rescue
 mvn clean test
-```
+
 
 ## 7. Explicación de Flyway
 Flyway es la herramienta de migración de base de datos encargada de versionar y evolucionar el esquema en PostgreSQL.
@@ -81,3 +79,59 @@ Testcontainers permite ejecutar pruebas de integración reales sobre un contened
   Filtra tratamientos realizados por especialistas con una determinada experiencia navegando N:M `Treatment -> Specialist -> expertiseAreas`.
 - `AnimalRepository.findByRescueStatusAndSpecialistExpertise(RescueStatus status, String expertiseName)` (Reto Sin Guía):
   Recupera animales distintos (`DISTINCT`) en un determinado estado cuyo tratamiento haya sido realizado por un especialista con una experiencia en particular.
+
+
+
+## 11. Capa de servicio
+
+Sobre la capa de persistencia se agregó una capa `Service` con la siguiente estructura:
+
+
+Service (interface)  ->  ServiceImpl  ->  Repository  ->  Hibernate  ->  PostgreSQL
+                              |
+                              +-> Mapper (MapStruct)  ->  DTO (record)
+
+
+| Paquete | Contenido |
+|---|---|
+| `dto.request` | `ChangeRescueStatusRequest`, `CreateTreatmentRequest` (records) |
+| `dto.response` | `RescueCaseResponse`, `TreatmentResponse`, `AnimalResponse` (records) |
+| `mapper` | `RescueCaseMapper`, `TreatmentMapper`, `AnimalMapper` (MapStruct, `componentModel = "spring"`) |
+| `exception` | `ResourceNotFoundException` (el recurso no existe), `BusinessRuleException` (existe, pero la operación no está permitida) |
+| `service` / `service.impl` | `RescueCaseService`, `TreatmentService`, `AnimalService` y sus implementaciones |
+
+Decisiones de diseño: inyección por constructor, `@Transactional(readOnly = true)` a nivel de clase y `@Transactional` solo en las operaciones de escritura, `Optional` + `orElseThrow` con mensajes significativos y las entidades nunca salen de la capa de servicio (se retornan DTOs).
+
+## 12. Reglas de negocio
+
+**Cambio de estado de un caso (`RescueCaseService.changeStatus`)** — flujo único permitido:
+
+
+ADMITTED -> UNDER_EVALUATION -> IN_REHABILITATION -> READY_FOR_RELEASE -> RELEASED
+
+
+Cualquier otra transición (saltos, retrocesos, mismo estado, o salir de `RELEASED`/`CLOSED`) lanza `BusinessRuleException` y **nunca** llega a `save()`.
+
+**Registro de tratamientos (`TreatmentService.register`)**, en este orden:
+
+1. El animal debe existir (`ResourceNotFoundException`).
+2. El especialista debe existir (`ResourceNotFoundException`).
+3. El especialista debe estar activo (`BusinessRuleException`).
+4. El animal debe tener caso de rescate y este no puede estar `RELEASED` ni `CLOSED` (`BusinessRuleException`).
+5. La fecha del tratamiento no puede ser anterior a `rescueDate` (`BusinessRuleException`). El mismo día del rescate es válido.
+
+**`AnimalService.canReceiveTreatment(animalCode)`** retorna `true` solo si el caso está en `UNDER_EVALUATION` o `IN_REHABILITATION`.
+
+Repositories agregados para esta capa: `SpecialistRepository.findByProfessionalCode` y `TreatmentRepository.findByAnimalAnimalCodeOrderByPerformedAtAsc`.
+
+## 13. Unit tests de la capa de servicio
+
+Los tests (`RescueCaseServiceImplTest`, `TreatmentServiceImplTest`, `AnimalServiceImplTest`) usan JUnit 5 + Mockito + AssertJ, sin `@SpringBootTest`, sin PostgreSQL y sin Testcontainers: los repositories y mappers son mocks.
+
+Para ejecutar solo los unit tests de servicio:
+
+
+mvn clean test -Dtest='*ServiceImplTest'
+
+
+`mvn clean test` (sin filtro) también ejecuta `PersistenceIntegrationTest`, que sí requiere Docker por Testcontainers.

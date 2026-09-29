@@ -23,7 +23,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Paso 45 - Container real de PostgreSQL levantado por Testcontainers.
 @Testcontainers
 @SpringBootTest
 @Transactional
@@ -37,7 +36,6 @@ class PersistenceIntegrationTest {
                     .withUsername("deepblue")
                     .withPassword("deepblue");
 
-    // Paso 46 - Repositories e infraestructura inyectados.
     @Autowired
     private RescueCenterRepository rescueCenterRepository;
 
@@ -62,7 +60,6 @@ class PersistenceIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    // Paso 47 - Test de Flyway: el esquema fue creado por Flyway, no por Hibernate.
     @Test
     void flywayShouldHaveExecutedV1AndV2AndV3() {
         List<String> appliedVersions = jdbcTemplate.queryForList(
@@ -73,7 +70,6 @@ class PersistenceIntegrationTest {
         assertThat(appliedVersions).contains("1", "2", "3");
     }
 
-    // Paso 48 - Test de métodos heredados
     @Test
     void testInheritedMethods() {
         RescueCenter center = new RescueCenter("DB-CAR", "DeepBlue Caribbean Center", "Santa Marta");
@@ -85,7 +81,6 @@ class PersistenceIntegrationTest {
         assertThat(rescueCenterRepository.count()).isGreaterThanOrEqualTo(1);
     }
 
-    // Paso 49 - Test relación 1:N
     @Test
     void testOneToManyRelationship() {
         RescueCenter center = new RescueCenter("DB-CAR-1N", "Caribbean 1N Center", "Santa Marta");
@@ -105,7 +100,6 @@ class PersistenceIntegrationTest {
                 .allMatch(c -> c.getCode().equals("DB-CAR-1N"));
     }
 
-    // Paso 50 - Test RescueCase 1:1 Animal
     @Test
     void testRescueCaseOneToOneAnimal() {
         RescueCenter center = rescueCenterRepository.save(new RescueCenter("DB-CAR-50", "Center 50", "City"));
@@ -124,7 +118,6 @@ class PersistenceIntegrationTest {
         assertThat(foundCase.get().getAnimal().getRescueCase().getCaseCode()).isEqualTo("RES-2026-001");
     }
 
-    // Paso 51 - Test Animal 1:1 MedicalRecord (Cascade)
     @Test
     void testAnimalOneToOneMedicalRecordCascade() {
         RescueCenter center = rescueCenterRepository.save(new RescueCenter("DB-CAR-51", "Center 51", "City"));
@@ -151,7 +144,6 @@ class PersistenceIntegrationTest {
         assertThat(foundAnimal.get().getMedicalRecord().getInitialWeight()).isEqualTo(new BigDecimal("28.40"));
     }
 
-    // Paso 52 - Test N:M Specialist <-> Expertise
     @Test
     void testManyToManySpecialistExpertise() {
         Expertise trauma = expertiseRepository.findByNameIgnoreCase("Trauma").orElseThrow();
@@ -169,7 +161,6 @@ class PersistenceIntegrationTest {
                 .contains("Trauma", "Rehabilitation");
     }
 
-    // Paso 53 - Test Query Method simple
     @Test
     void testSimpleQueryMethodByStatus() {
         RescueCenter center = rescueCenterRepository.save(new RescueCenter("DB-CAR-53", "Center 53", "City"));
@@ -188,7 +179,6 @@ class PersistenceIntegrationTest {
         assertThat(rehabCases).hasSize(2);
     }
 
-    // Paso 54 - Test Query Method navegando relaciones
     @Test
     void testQueryMethodNavigatingRelations() {
         RescueCenter centerCar = rescueCenterRepository.save(new RescueCenter("DB-CAR-54", "Caribbean", "City A"));
@@ -211,7 +201,6 @@ class PersistenceIntegrationTest {
         assertThat(carAnimals.get(0).getAnimalCode()).isEqualTo("AN-CAR-54");
     }
 
-    // Paso 55 - Test JPQL de especialistas
     @Test
     void testJpqlActiveSpecialistsByExpertise() {
         Expertise trauma = expertiseRepository.findByNameIgnoreCase("Trauma").orElseThrow();
@@ -236,7 +225,6 @@ class PersistenceIntegrationTest {
                 .containsExactlyInAnyOrder("Elena", "Sofia");
     }
 
-    // Pasos 56, 57, 58 - Test Treatment queries
     @Test
     void testTreatmentQueries() {
         RescueCenter center = rescueCenterRepository.save(new RescueCenter("DB-56", "Center 56", "City"));
@@ -261,13 +249,11 @@ class PersistenceIntegrationTest {
 
         treatmentRepository.saveAll(List.of(tr1, tr2, tr3));
 
-        // Paso 57: Chronological order
         List<Treatment> animalTreatments = treatmentRepository.findByAnimalIdOrderByPerformedAtAsc(animal.getId());
         assertThat(animalTreatments).hasSize(3);
         assertThat(animalTreatments.get(0).getPerformedAt()).isEqualTo(t1Time);
         assertThat(animalTreatments.get(2).getPerformedAt()).isEqualTo(t3Time);
 
-        // Paso 58: Interval query
         List<Treatment> rangeTreatments = treatmentRepository.findBetweenDates(
                 LocalDateTime.of(2026, 8, 5, 0, 0),
                 LocalDateTime.of(2026, 8, 15, 23, 59)
@@ -276,7 +262,6 @@ class PersistenceIntegrationTest {
         assertThat(rangeTreatments.get(0).getPerformedAt()).isEqualTo(t2Time);
     }
 
-    // Paso 59 - Test UNIQUE constraint
     @Test
     void testUniqueConstraintViolation() {
         RescueCenter center = rescueCenterRepository.save(new RescueCenter("DB-59", "Center 59", "City"));
@@ -297,7 +282,6 @@ class PersistenceIntegrationTest {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
-    // Pasos 62-64 - Test V3 Tracking Device Code
     @Test
     void testTrackingDeviceCode() {
         RescueCenter center = rescueCenterRepository.save(new RescueCenter("DB-V3", "Center V3", "City"));
@@ -314,10 +298,9 @@ class PersistenceIntegrationTest {
         assertThat(found.get().getTrackingDeviceCode()).isEqualTo("GPS-TRK-999");
     }
 
-    // Pasos 65, 66 - Reto Integrador
     @Test
     void testIntegratorChallenge() {
-        // Setup scenarios: DeepBlue Caribbean receives a sea turtle
+
         RescueCenter center = new RescueCenter("DB-CAR", "DeepBlue Caribbean", "Santa Marta");
         RescueCase rescueCase = new RescueCase("RES-2026-100", LocalDate.of(2026, 8, 18), "Bahía Concha", RescueStatus.IN_REHABILITATION);
         center.addCase(rescueCase);
@@ -352,36 +335,28 @@ class PersistenceIntegrationTest {
 
         treatmentRepository.saveAll(List.of(t1, t2));
 
-        // Consulta 1: ¿Existe el caso RES-2026-100?
         Optional<RescueCase> q1Case = rescueCaseRepository.findByCaseCode("RES-2026-100");
         assertThat(q1Case).isPresent();
 
-        // Consulta 2: Obtener todos los casos IN_REHABILITATION
         List<RescueCase> q2Cases = rescueCaseRepository.findByStatusOrderByRescueDateAsc(RescueStatus.IN_REHABILITATION);
         assertThat(q2Cases).extracting(RescueCase::getCaseCode).contains("RES-2026-100");
 
-        // Consulta 3: Obtener animales pertenecientes a DB-CAR
         List<Animal> q3Animals = animalRepository.findByRescueCaseRescueCenterCode("DB-CAR");
         assertThat(q3Animals).extracting(Animal::getAnimalCode).contains("AN-2026-100");
 
-        // Consulta 4: Buscar animales cuyo nombre común contenga "turtle" ignorando mayúsculas
         List<Animal> q4Animals = animalRepository.findByCommonNameContainingIgnoreCase("turtle");
         assertThat(q4Animals).extracting(Animal::getAnimalCode).contains("AN-2026-100");
 
-        // Consulta 5: Obtener especialistas con experiencia "Trauma"
         List<Specialist> q5Specs = specialistRepository.findActiveByExpertise("Trauma");
         assertThat(q5Specs).extracting(Specialist::getProfessionalCode).contains("SPEC-001");
 
-        // Consulta 6: Obtener todos los tratamientos de AN-2026-100 ordenados cronológicamente
         List<Treatment> q6Treatments = treatmentRepository.findByAnimalIdOrderByPerformedAtAsc(animal.getId());
         assertThat(q6Treatments).hasSize(2);
         assertThat(q6Treatments.get(0).getType()).isEqualTo(TreatmentType.WOUND_CARE);
 
-        // Consulta 7: Obtener tratamientos realizados por especialistas con experiencia "Rehabilitation"
         List<Treatment> q7Treatments = treatmentRepository.findBySpecialistExpertise("Rehabilitation");
         assertThat(q7Treatments).hasSize(2);
 
-        // Consulta 8: Obtener tratamientos realizados entre dos fechas
         List<Treatment> q8Treatments = treatmentRepository.findBetweenDates(
                 LocalDateTime.of(2026, 8, 18, 0, 0),
                 LocalDateTime.of(2026, 8, 18, 23, 59)
@@ -390,7 +365,6 @@ class PersistenceIntegrationTest {
         assertThat(q8Treatments.get(0).getType()).isEqualTo(TreatmentType.WOUND_CARE);
     }
 
-    // Pasos 75-77 - Reto Sin Guía Test
     @Test
     void testRetoSinGuiaQuery() {
         RescueCenter center = new RescueCenter("DB-RETO", "Center Reto", "City");
@@ -417,9 +391,8 @@ class PersistenceIntegrationTest {
 
         specialistRepository.saveAll(List.of(traumaSpec, rehabSpec));
 
-        // Animal 1 received treatment from traumaSpec (has Trauma expertise) and is IN_REHABILITATION
         Treatment t1 = new Treatment(a1, traumaSpec, LocalDateTime.now(), TreatmentType.MEDICATION, "Meds");
-        // Animal 2 received treatment from traumaSpec, but status is RELEASED
+
         Treatment t2 = new Treatment(a2, traumaSpec, LocalDateTime.now(), TreatmentType.OBSERVATION, "Obs");
 
         treatmentRepository.saveAll(List.of(t1, t2));

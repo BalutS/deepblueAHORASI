@@ -1,6 +1,3 @@
--- =========================================================
--- rescue_centers
--- =========================================================
 CREATE TABLE rescue_centers (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(30) NOT NULL,
@@ -9,9 +6,6 @@ CREATE TABLE rescue_centers (
     CONSTRAINT uk_rescue_centers_code UNIQUE (code)
 );
 
--- =========================================================
--- rescue_cases
--- =========================================================
 CREATE TABLE rescue_cases (
     id BIGSERIAL PRIMARY KEY,
     case_code VARCHAR(30) NOT NULL,
@@ -33,9 +27,6 @@ CREATE TABLE rescue_cases (
         ))
 );
 
--- =========================================================
--- animals
--- =========================================================
 CREATE TABLE animals (
     id BIGSERIAL PRIMARY KEY,
     animal_code VARCHAR(30) NOT NULL,
@@ -49,9 +40,6 @@ CREATE TABLE animals (
         FOREIGN KEY (rescue_case_id) REFERENCES rescue_cases (id)
 );
 
--- =========================================================
--- medical_records
--- =========================================================
 CREATE TABLE medical_records (
     id BIGSERIAL PRIMARY KEY,
     animal_id BIGINT NOT NULL,
@@ -64,9 +52,6 @@ CREATE TABLE medical_records (
         FOREIGN KEY (animal_id) REFERENCES animals (id)
 );
 
--- =========================================================
--- specialists
--- =========================================================
 CREATE TABLE specialists (
     id BIGSERIAL PRIMARY KEY,
     professional_code VARCHAR(30) NOT NULL,
@@ -78,18 +63,12 @@ CREATE TABLE specialists (
     CONSTRAINT uk_specialists_email UNIQUE (email)
 );
 
--- =========================================================
--- expertise
--- =========================================================
 CREATE TABLE expertise (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     CONSTRAINT uk_expertise_name UNIQUE (name)
 );
 
--- =========================================================
--- specialist_expertise (tabla asociativa)
--- =========================================================
 CREATE TABLE specialist_expertise (
     specialist_id BIGINT NOT NULL,
     expertise_id BIGINT NOT NULL,
@@ -100,9 +79,6 @@ CREATE TABLE specialist_expertise (
         FOREIGN KEY (expertise_id) REFERENCES expertise (id)
 );
 
--- =========================================================
--- treatments
--- =========================================================
 CREATE TABLE treatments (
     id BIGSERIAL PRIMARY KEY,
     animal_id BIGINT NOT NULL,
@@ -116,9 +92,6 @@ CREATE TABLE treatments (
         FOREIGN KEY (specialist_id) REFERENCES specialists (id)
 );
 
--- =========================================================
--- Índices
--- =========================================================
 CREATE INDEX idx_rescue_cases_rescue_center_id ON rescue_cases (rescue_center_id);
 CREATE INDEX idx_rescue_cases_status ON rescue_cases (status);
 CREATE INDEX idx_rescue_cases_rescue_date ON rescue_cases (rescue_date);

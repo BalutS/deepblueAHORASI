@@ -31,7 +31,7 @@ public class Treatment {
     private String description;
 
     protected Treatment() {
-        // requerido por JPA
+
     }
 
     public Treatment(Animal animal, Specialist specialist, LocalDateTime performedAt,
