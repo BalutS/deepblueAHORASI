@@ -10,10 +10,10 @@ import java.util.List;
 
 public interface TreatmentRepository extends JpaRepository<Treatment, Long> {
 
-    // Paso 41 - Query Method: tratamientos de un animal, orden cronológico.
     List<Treatment> findByAnimalIdOrderByPerformedAtAsc(Long animalId);
 
-    // Paso 42 - JPQL: tratamientos realizados entre dos fechas.
+    List<Treatment> findByAnimalAnimalCodeOrderByPerformedAtAsc(String animalCode);
+
     @Query("""
             select t
             from Treatment t
@@ -23,7 +23,6 @@ public interface TreatmentRepository extends JpaRepository<Treatment, Long> {
     List<Treatment> findBetweenDates(@Param("start") LocalDateTime start,
                                       @Param("end") LocalDateTime end);
 
-    // Paso 43 - JPQL navegando Treatment -> Animal -> RescueCase -> RescueCenter.
     @Query("""
             select t
             from Treatment t
@@ -32,8 +31,6 @@ public interface TreatmentRepository extends JpaRepository<Treatment, Long> {
             """)
     List<Treatment> findByAnimalRescueCenterCode(@Param("centerCode") String centerCode);
 
-    // Paso 44 - JPQL con N:M: tratamientos realizados por especialistas
-    // con determinada experiencia.
     @Query("""
             select distinct t
             from Treatment t

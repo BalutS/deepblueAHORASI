@@ -38,7 +38,7 @@ public class RescueCase {
     private Animal animal;
 
     protected RescueCase() {
-        // requerido por JPA
+
     }
 
     public RescueCase(String caseCode, LocalDate rescueDate, String rescueLocation, RescueStatus status) {
